@@ -57,13 +57,10 @@ class ForkingWorker(BaseWorker):
 class GeventWorker(BaseWorker):
 
     def __init__(self, num_processes=1):
-        # self._semaphore = Semaphore(num_processes)
-        # self._slots = Array('i', [0] * num_processes)
         self._pool = gevent.pool.Pool(num_processes)
 
     def spawn_child(self):
         """Forks and executes the job."""
-        # self._semaphore.acquire()
         self._pool.spawn(self.fake_work)
 
 
