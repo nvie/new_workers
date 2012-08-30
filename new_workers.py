@@ -25,10 +25,15 @@ class ForkingWorker(BaseWorker):
 
     def __init__(self, num_processes=1):
         self._semaphore = Semaphore(num_processes)
+        self._slots = Array('i', [0] * num_processes)
 
     def spawn_child(self):
         """Forks and executes the job."""
         self._semaphore.acquire()
+
+        for slot, value in enumerate(self._slots):
+            if value == 0:
+                break
 
         child_pid = os.fork()
         if child_pid == 0:
@@ -37,11 +42,12 @@ class ForkingWorker(BaseWorker):
             try:
                 self.fake_work()
             finally:
+                self._slots[slot] = 0
                 self._semaphore.release()
                 os._exit(0)
         else:
             # Within parent
-            pass
+            self._slots[slot] = child_pid
 
 
 if __name__ == '__main__':
