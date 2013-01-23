@@ -15,14 +15,17 @@ class BaseWorker(object):
         while True:
             self.spawn_child()
 
+    def get_ident(self):
+        raise NotImplementedError('Implement this in a subclass.')
+
     def spawn_child(self):
         raise NotImplementedError('Implement this in a subclass.')
 
     def fake_work(self):
-        sleep_time = 3 * random.random()
-        print datetime.datetime.now(), '- Hello from', os.getpid(), '- %.3fs' % sleep_time
+        sleep_time = 10 * random.random()
+        print datetime.datetime.now(), '- Hello from', self.get_ident(), '- %.3fs' % sleep_time
         time.sleep(sleep_time)
-
+        print datetime.datetime.now(), '- Done from', self.get_ident()
 
 
 class ForkingWorker(BaseWorker):
@@ -31,6 +34,9 @@ class ForkingWorker(BaseWorker):
         # Set up sync primitives, to communicate with the spawned children
         self._semaphore = Semaphore(num_processes)
         self._slots = Array('i', [0] * num_processes)
+
+    def get_ident(self):
+        return os.getpid()
 
     def spawn_child(self):
         """Forks and executes the job."""
@@ -68,6 +74,9 @@ class GeventWorker(BaseWorker):
 
     def __init__(self, num_processes=1):
         self._pool = gevent.pool.Pool(num_processes)
+
+    def get_ident(self):
+        return id(gevent.getcurrent())
 
     def spawn_child(self):
         """Forks and executes the job."""
