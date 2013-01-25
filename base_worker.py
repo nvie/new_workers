@@ -1,7 +1,6 @@
 import random
 import time
 import datetime
-import signal
 from helpers import install_signal_handlers
 
 
@@ -43,7 +42,7 @@ class FakeWorkMethodMixin(object):
 class BaseWorker(FakeWorkMethodMixin):
 
     def work(self):
-        install_signal_handlers()
+        self.install_signal_handlers()
 
         while True:
             try:
@@ -60,6 +59,9 @@ class BaseWorker(FakeWorkMethodMixin):
             print 'Children killed. You murderer.'
 
         print 'Shut down'
+
+    def install_signal_handlers(self):
+        install_signal_handlers()
 
     def get_ident(self):
         raise NotImplementedError('Implement this in a subclass.')
