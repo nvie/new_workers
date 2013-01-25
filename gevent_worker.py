@@ -7,22 +7,7 @@ import gevent
 import gevent.pool
 from gevent.event import Event
 import time
-from functools import wraps
 from base_worker import BaseWorker
-
-
-def safe_wrap(func):
-    """
-    This safety wrapper wraps 100% CPU-bound methods to have at least one
-    point where a context-switch is allowed to take place.  This makes sure
-    that the main worker process does not freeze when only CPU-bound methods
-    are executed, effectively making it impossible to cancel using Ctrl+C.
-    """
-    @wraps(func)
-    def _wrapper(*args, **kwargs):
-        time.sleep(0)  # ensure that at least one context-switch is possible before calling func
-        return func(*args, **kwargs)
-    return _wrapper
 
 
 class GeventWorker(BaseWorker):
@@ -72,12 +57,11 @@ class GeventWorker(BaseWorker):
 
     ##
     # Helper methods (specific to gevent workers)
-    def _unregister_child(self, child):
+    def _unregister_child(self, child):  # noqa
         print '==> Unregistering {}'.format(id(child))
         del self._busy_children[child]
 
     def _main_child(self, busy_flag):
-        #safe_wrap(self.fake))
         busy_flag.clear()
         time.sleep(random.random() * 4)  # TODO: Fake BLPOP behaviour
         busy_flag.set()
