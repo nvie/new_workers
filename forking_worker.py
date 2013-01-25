@@ -106,7 +106,7 @@ class ForkingWorker(BaseWorker):
             # Within child
             try:
                 self._idle[slot] = True
-                time.sleep(random.randint(0, 4))  # TODO: Fake BLPOP behaviour
+                time.sleep(random.random() * 4)  # TODO: Fake BLPOP behaviour
                 self._idle[slot] = False
                 self.fake()
             finally:

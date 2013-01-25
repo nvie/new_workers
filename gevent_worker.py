@@ -54,7 +54,7 @@ class GeventWorker(BaseWorker):
     def main_child(self, busy_flag):
         #safe_wrap(self.fake))
         busy_flag.clear()
-        time.sleep(random.randint(0, 10))  # TODO: Fake BLPOP behaviour
+        time.sleep(random.random() * 4)  # TODO: Fake BLPOP behaviour
         busy_flag.set()
 
         time.sleep(0)  # TODO: Required to avoid "blocking" by CPU-bound jobs
