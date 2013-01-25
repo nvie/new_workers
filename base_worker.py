@@ -30,13 +30,15 @@ class FakeWorkMethodMixin(object):
         word_count = len(requests.get(url).text.split())
         print '{} contains {} words.'.format(url, word_count)
 
-    def fake(self):
+    def fake_blpop(self):
         """
         This simulates a BLPOP call, which will block until a job is
         available.
         """
+        time.sleep(random.random() * 4)  # sleep somewhere between 0 and 4 seconds
         methods = [self.fake_wait, self.fake_fib, self.fake_url_get]
-        random.choice(methods)()
+        method = random.choice(methods)
+        return method
 
 
 class BaseWorker(FakeWorkMethodMixin):

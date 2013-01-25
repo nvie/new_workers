@@ -1,7 +1,6 @@
 from gevent import monkey
 monkey.patch_all()
 
-import random
 import signal
 import gevent
 import gevent.pool
@@ -36,7 +35,7 @@ class GeventWorker(BaseWorker):
     def spawn_child(self):
         """Forks and executes the job."""
         busy_flag = Event()
-        child_greenlet = self._pool.spawn(self._main_child, busy_flag)
+        child_greenlet = self._pool.spawn(self.main_child, busy_flag)
         self._busy[child_greenlet] = busy_flag
         child_greenlet.link(self._cleanup_busy_flag)
 
@@ -70,13 +69,14 @@ class GeventWorker(BaseWorker):
         print 'del self._busy[{}]'.format(id(child))
         del self._busy[child]
 
-    def _main_child(self, busy_flag):
+    def main_child(self, busy_flag):
+        """The main entry point within a spawned child."""
         busy_flag.clear()  # Not really necessary, but explicit
-        time.sleep(random.random() * 4)  # TODO: Fake BLPOP behaviour
+        job = self.fake_blpop()
         busy_flag.set()
 
         time.sleep(0)  # TODO: Required to avoid "blocking" by CPU-bound jobs
-        self.fake()
+        job()  # fake perform job
 
 
 if __name__ == '__main__':

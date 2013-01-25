@@ -1,6 +1,5 @@
 import signal
 import os
-import time
 import random
 from multiprocessing import Semaphore, Array
 from base_worker import BaseWorker
@@ -107,10 +106,7 @@ class ForkingWorker(BaseWorker):
 
             # Within child
             try:
-                self._idle[slot] = True
-                time.sleep(random.random() * 4)  # TODO: Fake BLPOP behaviour
-                self._idle[slot] = False
-                self.fake()
+                self.main_child(slot)
             finally:
                 # Remember, we're in the child process currently. When all
                 # work is done here, free up the current slot (by writing
@@ -143,6 +139,13 @@ class ForkingWorker(BaseWorker):
         if self._waitfor[slot] > 0:
             os.waitpid(self._waitfor[slot], 0)
             self._waitfor[slot] = 0
+
+    def main_child(self, slot):
+        """The main entry point within a spawned child."""
+        self._idle[slot] = True
+        job = self.fake_blpop()
+        self._idle[slot] = False
+        job()  # fake job execution
 
 
 if __name__ == '__main__':
