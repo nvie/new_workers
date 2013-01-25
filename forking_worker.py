@@ -141,5 +141,5 @@ class ForkingWorker(BaseWorker):
 
 
 if __name__ == '__main__':
-    w = ForkingWorker(6)
+    w = ForkingWorker(4)
     w.work()

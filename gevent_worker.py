@@ -85,5 +85,5 @@ class GeventWorker(BaseWorker):
 
 
 if __name__ == '__main__':
-    gw = GeventWorker(40)
+    gw = GeventWorker(10)
     gw.work()

@@ -1,3 +1,23 @@
+**_Be warned_: this is very experimental!**
+
+
+Contributing
+------------
+
+The code needs some cleanup, and might not be obvious at all.  All of this is
+very much the result of myself hacking around in it for way too long.  Please
+do add GitHub comments for lines that are unclear, and I'll explain they're in
+there.  This bit of communication will be vital in developing a common
+understanding of the new model.
+
+Any help with this is really appreciated!
+
+To run the workers (all executing fake work for now):
+
+    $ python forking_worker.py  # will start 4 children
+    $ python gevent_worker.py  # will start 10 greenlets
+
+
 The New and Shiny RQ Concurrent Workers
 ---------------------------------------
 
