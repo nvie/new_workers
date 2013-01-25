@@ -37,6 +37,8 @@ def kill(pid, signum=signal.SIGKILL):
 
 class ForkingWorker(BaseWorker):
 
+    ##
+    # Overridden from BaseWorker
     def __init__(self, num_processes=1):
         # Set up sync primitives, to communicate with the spawned children
         self.num_processes = num_processes
@@ -76,10 +78,6 @@ class ForkingWorker(BaseWorker):
     def get_ident(self):
         return os.getpid()
 
-    def disable_interrupts(self):
-        signal.signal(signal.SIGINT, signal.SIG_IGN)
-        signal.signal(signal.SIGTERM, signal.SIG_IGN)
-
     def spawn_child(self):
         """Forks and executes the job."""
         self.install_signal_handlers()
@@ -88,8 +86,50 @@ class ForkingWorker(BaseWorker):
         # SIGTERM, the worker's main loop will catch it
         self._semaphore.acquire()
 
-        self.disable_interrupts()
+        self._disable_interrupts()
         self._fork()
+
+    def wait_for_children(self):
+        """
+        Wait for children to finish their execution.  This function should
+        block until all children are finished.  May be interrupted by another
+        press of Ctrl+C, which kicks off forceful termination.
+        """
+        # As soon as we can acquire all slots, we're done executing
+        for pid in self._pids:
+            if pid != 0:
+                print 'waiting for pid %d to finish gracefully...' % (pid,)
+                waitpid(pid)
+
+    def terminate_idle_children(self):
+        for slot, idle in enumerate(self._idle):
+            pid = self._pids[slot]
+            if idle:
+                print '==> Killing idle pid {}'.format(pid)
+                kill(pid, signal.SIGKILL)
+                #os.waitpid(pid, 0)  # necessary?
+            else:
+                print '==> Waiting for pid {} (still busy)'.format(pid)
+
+    def kill_children(self):
+        """
+        Force-kill all children.  This function should block until all
+        children are terminated.
+        """
+        # As soon as we can acquire all slots, we're done executing
+        for pid in self._pids:
+            if pid != 0:
+                print 'killing pid %d...' % (pid,)
+                kill(pid, signal.SIGKILL)
+
+        self.wait_for_children()
+
+
+    ##
+    # Helper methods (specific to forking workers)
+    def _disable_interrupts(self):  # noqa
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
+        signal.signal(signal.SIGTERM, signal.SIG_IGN)
 
     def _fork(self):
         slot = self._claim_slot()
@@ -137,41 +177,6 @@ class ForkingWorker(BaseWorker):
         if self._waitfor[slot] > 0:
             os.waitpid(self._waitfor[slot], 0)
             self._waitfor[slot] = 0
-
-    def wait_for_children(self):
-        """
-        Wait for children to finish their execution.  This function should
-        block until all children are finished.  May be interrupted by another
-        press of Ctrl+C, which kicks off forceful termination.
-        """
-        # As soon as we can acquire all slots, we're done executing
-        for pid in self._pids:
-            if pid != 0:
-                print 'waiting for pid %d to finish gracefully...' % (pid,)
-                waitpid(pid)
-
-    def terminate_idle_children(self):
-        for slot, idle in enumerate(self._idle):
-            pid = self._pids[slot]
-            if idle:
-                print '==> Killing idle pid {}'.format(pid)
-                kill(pid, signal.SIGKILL)
-                #os.waitpid(pid, 0)  # necessary?
-            else:
-                print '==> Waiting for pid {} (still busy)'.format(pid)
-
-    def kill_children(self):
-        """
-        Force-kill all children.  This function should block until all
-        children are terminated.
-        """
-        # As soon as we can acquire all slots, we're done executing
-        for pid in self._pids:
-            if pid != 0:
-                print 'killing pid %d...' % (pid,)
-                kill(pid, signal.SIGKILL)
-
-        self.wait_for_children()
 
 
 if __name__ == '__main__':
