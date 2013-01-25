@@ -46,28 +46,28 @@ class GeventWorker(BaseWorker):
 
     def spawn_child(self):
         """Forks and executes the job."""
-        event = Event()
-        child_greenlet = self._pool.spawn(self.main_child, event)
-        self._events[child_greenlet] = event
+        busy_flag = Event()
+        child_greenlet = self._pool.spawn(self.main_child, busy_flag)
+        self._events[child_greenlet] = busy_flag
         child_greenlet.link(self.unregister_child)
 
-    def main_child(self, event):
+    def main_child(self, busy_flag):
         #safe_wrap(self.fake))
-        event.clear()
+        busy_flag.clear()
         time.sleep(random.randint(0, 10))
-        event.set()
+        busy_flag.set()
 
         time.sleep(0)  # TODO: Required to avoid "blocking" by CPU-bound jobs
         try:
             self.fake()
         finally:
-            event.clear()
+            busy_flag.clear()
 
     def terminate_idle_children(self):
         #print "TODO: Should find all children that are waiting for Redis' BLPOP command."
         print "Find all children that are waiting for Redis' BLPOP command..."
-        for child_greenlet, busy_event in self._events.items():
-            if not busy_event.is_set():
+        for child_greenlet, busy_flag in self._events.items():
+            if not busy_flag.is_set():
                 print '==> Killing {}'.format(id(child_greenlet))
                 child_greenlet.kill()
             else:
