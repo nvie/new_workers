@@ -29,7 +29,7 @@ class GeventWorker(BaseWorker):
 
     def __init__(self, num_processes=1):
         self._pool = gevent.pool.Pool(num_processes)
-        self._events = {}
+        self._busy_children = {}
 
     def install_signal_handlers(self):
         # Enabling the following line to explicitly set SIGINT yields very
@@ -42,13 +42,13 @@ class GeventWorker(BaseWorker):
 
     def unregister_child(self, child):
         print '==> Unregistering {}'.format(id(child))
-        del self._events[child]
+        del self._busy_children[child]
 
     def spawn_child(self):
         """Forks and executes the job."""
         busy_flag = Event()
         child_greenlet = self._pool.spawn(self.main_child, busy_flag)
-        self._events[child_greenlet] = busy_flag
+        self._busy_children[child_greenlet] = busy_flag
         child_greenlet.link(self.unregister_child)
 
     def main_child(self, busy_flag):
@@ -65,7 +65,7 @@ class GeventWorker(BaseWorker):
 
     def terminate_idle_children(self):
         print 'Find all children that are in idle state (waiting for work)...'
-        for child_greenlet, busy_flag in self._events.items():
+        for child_greenlet, busy_flag in self._busy_children.items():
             if not busy_flag.is_set():
                 print '==> Killing {}'.format(id(child_greenlet))
                 child_greenlet.kill()
