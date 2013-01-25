@@ -38,7 +38,7 @@ class GeventWorker(BaseWorker):
         busy_flag = Event()
         child_greenlet = self._pool.spawn(self._main_child, busy_flag)
         self._busy[child_greenlet] = busy_flag
-        child_greenlet.link(self._unregister_child)
+        child_greenlet.link(self._cleanup_busy_flag)
 
     def terminate_idle_children(self):
         print 'Find all children that are in idle state (waiting for work)...'
@@ -63,8 +63,11 @@ class GeventWorker(BaseWorker):
 
     ##
     # Helper methods (specific to gevent workers)
-    def _unregister_child(self, child):  # noqa
-        print '==> Unregistering {}'.format(id(child))
+    def _cleanup_busy_flag(self, child):  # noqa
+        """Callback that's called when a child greenlet finishes.  Since the
+        greenlet is gone, we can clean up our busy administration.
+        """
+        print 'del self._busy[{}]'.format(id(child))
         del self._busy[child]
 
     def _main_child(self, busy_flag):
