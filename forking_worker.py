@@ -2,38 +2,9 @@ import signal
 import os
 import time
 import random
-import errno
 from multiprocessing import Semaphore, Array
 from base_worker import BaseWorker
-from helpers import Interruptable
-
-
-def waitpid(pid):
-    """
-    Safe version of `os.waitpid(pid, 0)` that catches OSError in case of an
-    already-gone child pid.
-    """
-    try:
-        os.waitpid(pid, 0)
-    except OSError as e:
-        if e.errno != errno.ECHILD:
-            # Allow "No such process", since that means process is
-            # already gone---no need to wait for it to finish
-            raise
-
-
-def kill(pid, signum=signal.SIGKILL):
-    """
-    Safe version of `os.kill(pid, signum)` that catches OSError in case of an
-    already-dead pid.
-    """
-    try:
-        os.kill(pid, signum)
-    except OSError as e:
-        if e.errno != errno.ESRCH:
-            # Allow "No such process", since that means process is
-            # already gone---no need to kill what's already dead
-            raise
+from helpers import Interruptable, waitpid, kill
 
 
 class ForkingWorker(BaseWorker):
