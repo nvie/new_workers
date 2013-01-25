@@ -2,6 +2,7 @@ import random
 import time
 import datetime
 import signal
+from helpers import install_signal_handlers
 
 
 def slow_fib(n):
@@ -42,7 +43,7 @@ class FakeWorkMethodMixin(object):
 class BaseWorker(FakeWorkMethodMixin):
 
     def work(self):
-        self.install_signal_handlers()
+        install_signal_handlers()
 
         while True:
             try:
@@ -59,14 +60,6 @@ class BaseWorker(FakeWorkMethodMixin):
             print 'Children killed. You murderer.'
 
         print 'Shut down'
-
-    #def disable_interrupts(self):
-    #    signal.signal(signal.SIGINT, signal.SIG_IGN)
-    #    signal.signal(signal.SIGTERM, signal.SIG_IGN)
-
-    def install_signal_handlers(self):
-        signal.signal(signal.SIGINT, signal.default_int_handler)
-        signal.signal(signal.SIGTERM, signal.default_int_handler)
 
     def get_ident(self):
         raise NotImplementedError('Implement this in a subclass.')

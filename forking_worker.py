@@ -5,6 +5,7 @@ import random
 import errno
 from multiprocessing import Semaphore, Array
 from base_worker import BaseWorker
+from helpers import Interruptable
 
 
 def waitpid(pid):
@@ -80,13 +81,11 @@ class ForkingWorker(BaseWorker):
 
     def spawn_child(self):
         """Forks and executes the job."""
-        self.install_signal_handlers()
-
         # Responsible for the blocking, may be interrupted by SIGINT or
         # SIGTERM, the worker's main loop will catch it
-        self._semaphore.acquire()
+        with Interruptable():
+            self._semaphore.acquire()
 
-        self._disable_interrupts()
         self._fork()
 
     def wait_for_children(self):
@@ -127,11 +126,7 @@ class ForkingWorker(BaseWorker):
 
     ##
     # Helper methods (specific to forking workers)
-    def _disable_interrupts(self):  # noqa
-        signal.signal(signal.SIGINT, signal.SIG_IGN)
-        signal.signal(signal.SIGTERM, signal.SIG_IGN)
-
-    def _fork(self):
+    def _fork(self):  # noqa
         slot = self._claim_slot()
 
         # The usual hardcore forking action
