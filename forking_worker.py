@@ -40,9 +40,37 @@ class ForkingWorker(BaseWorker):
     def __init__(self, num_processes=1):
         # Set up sync primitives, to communicate with the spawned children
         self.num_processes = num_processes
+
+        # This semaphore is used as a "worker pool guard" to keep the number
+        # of spawned workers in the pool to the specified maximum (and block
+        # the .spawn_child() call after that)
         self._semaphore = Semaphore(num_processes)
+
+        # This array of integers represents a slot per worker and holds the
+        # actual pids (process ids) of the worker's children.  Initially, the
+        # array-of-pids is all zeroes.  When a new child is spawned, the pid
+        # is written into the slot.  WHen a child finishes, it resets its own
+        # slot to 0 again, effectively freeing up the slot (and allowing new
+        # children to be spawned).
         self._pids = Array('i', [0] * num_processes)
+
+        # This array of integers also represents a slot per worker and also
+        # holds the actual pids of the worker's children.  The difference with
+        # _pids, however, is that this array's slots don't get reset
+        # immediately when the children end.  In order for Unix subprocesses
+        # to actually disappear from the process list (and freeing up the
+        # memory), they need to be waitpid()'ed for by the parent process.
+        # When each new child is spawned, it waitpid()'s for the (finished)
+        # child that was previously in that slot before it claims the new
+        # slot.  This mainly avoids ever-growing process lists and slowly
+        # growing the memory footprint.
         self._waitfor = Array('i', [0] * num_processes)
+
+        # This array of booleans represent workers that are in their idle
+        # state (i.e. they are waiting for work).  During this time, it is
+        # safe to terminate them when the user requests so.  Once they start
+        # processing work, they flip their idle state and won't be terminated
+        # while they're still doing work.
         self._idle = Array('b', [False] * num_processes)
 
     def get_ident(self):
