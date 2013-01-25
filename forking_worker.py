@@ -92,11 +92,7 @@ class ForkingWorker(BaseWorker):
         self._fork()
 
     def _fork(self):
-        slot = self._find_empty_slot()
-
-        if self._waitfor[slot] > 0:
-            os.waitpid(self._waitfor[slot], 0)
-            self._waitfor[slot] = 0
+        slot = self._claim_slot()
 
         # The usual hardcore forking action
         child_pid = os.fork()
@@ -124,6 +120,11 @@ class ForkingWorker(BaseWorker):
             self._pids[slot] = child_pid
             self._waitfor[slot] = child_pid
 
+    def _claim_slot(self):
+        slot = self._find_empty_slot()
+        self._wait_for_previous_worker(slot)
+        return slot
+
     def _find_empty_slot(self):
         # Select an empty slot from self._pids (the first 0 value is picked)
         # The implementation guarantees there will always be at least one empty slot
@@ -131,6 +132,11 @@ class ForkingWorker(BaseWorker):
             if value == 0:
                 return slot
         raise RuntimeError('This should never happen.')
+
+    def _wait_for_previous_worker(self, slot):
+        if self._waitfor[slot] > 0:
+            os.waitpid(self._waitfor[slot], 0)
+            self._waitfor[slot] = 0
 
     def wait_for_children(self):
         """
