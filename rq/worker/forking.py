@@ -2,8 +2,8 @@ import signal
 import os
 import random
 from multiprocessing import Semaphore, Array
-from base_worker import BaseWorker
-from helpers import Interruptable, waitpid, kill
+from rq.worker.base import BaseWorker
+from rq.worker.helpers import Interruptable, waitpid, kill
 
 
 class ForkingWorker(BaseWorker):

@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from gevent import monkey
 monkey.patch_all()
 
@@ -6,7 +7,7 @@ import gevent
 import gevent.pool
 from gevent.event import Event
 import time
-from base_worker import BaseWorker
+from rq.worker.base import BaseWorker
 
 
 class GeventWorker(BaseWorker):
@@ -77,8 +78,3 @@ class GeventWorker(BaseWorker):
 
         time.sleep(0)  # TODO: Required to avoid "blocking" by CPU-bound jobs
         job()  # fake perform job
-
-
-if __name__ == '__main__':
-    gw = GeventWorker(10)
-    gw.work()
