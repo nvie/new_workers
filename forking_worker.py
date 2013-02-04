@@ -61,14 +61,15 @@ class ForkingWorker(BaseWorker):
     def wait_for_children(self):
         """
         Wait for children to finish their execution.  This function should
-        block until all children are finished.  May be interrupted by another
-        press of Ctrl+C, which kicks off forceful termination.
+        block until all children are finished.  Must be interruptable by
+        another press of Ctrl+C, which kicks off forceful termination.
         """
         # As soon as we can acquire all slots, we're done executing
-        for pid in self._pids:
-            if pid != 0:
-                print 'waiting for pid %d to finish gracefully...' % (pid,)
-                waitpid(pid)
+        with Interruptable():
+            for pid in self._pids:
+                if pid != 0:
+                    print 'waiting for pid %d to finish gracefully...' % (pid,)
+                    waitpid(pid)
 
     def terminate_idle_children(self):
         for slot, idle in enumerate(self._idle):
