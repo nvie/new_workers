@@ -14,8 +14,8 @@ Any help with this is really appreciated!
 
 To run the workers (all executing fake work for now):
 
-    $ python forking_worker.py  # will start 4 children
-    $ python gevent_worker.py  # will start 10 greenlets
+    $ python main.py forking 4  # will start 4 pre-forked child processes
+    $ python main.py gevent 10  # will use 10 greenlets
 
 
 The New and Shiny RQ Concurrent Workers
