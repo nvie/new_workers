@@ -39,3 +39,15 @@ class BaseWorker(FakeWorkMethodMixin):
             print 'Children killed. You murderer.'
 
         print 'Shut down'
+
+    def main_child(self, mark_busy):
+        """The main entry point within a spawned child.  When this method is
+        invoked, any forking or spawning is already done by the main worker,
+        and this method is invoked to do the actual blocking wait and the
+        execution of the job.
+        """
+        #busy_flag.clear()  # Not really necessary, but explicit
+        job = self.fake_blpop()
+        #busy_flag.set()
+        mark_busy()
+        job()  # fake perform job

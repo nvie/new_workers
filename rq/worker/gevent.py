@@ -76,12 +76,3 @@ class GeventWorker(BaseWorker):
         """
         print 'del self._busy[{}]'.format(id(child))
         del self._busy[child]
-
-    def main_child(self, mark_busy):
-        """The main entry point within a spawned child."""
-        #busy_flag.clear()  # Not really necessary, but explicit
-        job = self.fake_blpop()
-        #busy_flag.set()
-        mark_busy()
-
-        job()  # fake perform job

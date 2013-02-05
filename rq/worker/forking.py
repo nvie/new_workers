@@ -146,14 +146,6 @@ class ForkingWorker(BaseWorker):
             os.waitpid(self._waitfor[slot], 0)
             self._waitfor[slot] = 0
 
-    def main_child(self, mark_busy):
-        """The main entry point within a spawned child."""
-        #self._idle[slot] = True
-        job = self.fake_blpop()
-        #self._idle[slot] = False
-        mark_busy()
-        job()  # fake job execution
-
 
 if __name__ == '__main__':
     w = ForkingWorker(4)
