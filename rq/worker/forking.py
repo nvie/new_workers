@@ -107,7 +107,12 @@ class ForkingWorker(BaseWorker):
 
             # Within child
             try:
-                self.main_child(slot)
+                def _mark_busy(slot):
+                    def _inner():
+                        self._idle[slot] = False
+                    return _inner
+                self._idle[slot] = True
+                self.main_child(_mark_busy(slot))
             finally:
                 # Remember, we're in the child process currently. When all
                 # work is done here, free up the current slot (by writing
@@ -141,11 +146,12 @@ class ForkingWorker(BaseWorker):
             os.waitpid(self._waitfor[slot], 0)
             self._waitfor[slot] = 0
 
-    def main_child(self, slot):
+    def main_child(self, mark_busy):
         """The main entry point within a spawned child."""
-        self._idle[slot] = True
+        #self._idle[slot] = True
         job = self.fake_blpop()
-        self._idle[slot] = False
+        #self._idle[slot] = False
+        mark_busy()
         job()  # fake job execution
 
 

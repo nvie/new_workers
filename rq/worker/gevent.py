@@ -36,7 +36,13 @@ class GeventWorker(BaseWorker):
     def spawn_child(self):
         """Forks and executes the job."""
         busy_flag = Event()
-        child_greenlet = self._pool.spawn(self.main_child, busy_flag)
+
+        def _mark_busy(flag):
+            def _inner():
+                flag.set()
+            return _inner
+
+        child_greenlet = self._pool.spawn(self.main_child, _mark_busy(busy_flag))
         self._busy[child_greenlet] = busy_flag
         child_greenlet.link(self._cleanup_busy_flag)
 
@@ -70,11 +76,12 @@ class GeventWorker(BaseWorker):
         print 'del self._busy[{}]'.format(id(child))
         del self._busy[child]
 
-    def main_child(self, busy_flag):
+    def main_child(self, mark_busy):
         """The main entry point within a spawned child."""
-        busy_flag.clear()  # Not really necessary, but explicit
+        #busy_flag.clear()  # Not really necessary, but explicit
         job = self.fake_blpop()
-        busy_flag.set()
+        #busy_flag.set()
+        mark_busy()
 
         time.sleep(0)  # TODO: Required to avoid "blocking" by CPU-bound jobs
         job()  # fake perform job
