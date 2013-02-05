@@ -39,6 +39,7 @@ class GeventWorker(BaseWorker):
 
         def _mark_busy(flag):
             def _inner():
+                time.sleep(0)  # TODO: Required to avoid "blocking" by CPU-bound jobs in gevented worker
                 flag.set()
             return _inner
 
@@ -83,5 +84,4 @@ class GeventWorker(BaseWorker):
         #busy_flag.set()
         mark_busy()
 
-        time.sleep(0)  # TODO: Required to avoid "blocking" by CPU-bound jobs
         job()  # fake perform job
